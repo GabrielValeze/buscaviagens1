@@ -1,122 +1,260 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:flutter/services.dart'
+    show rootBundle; // Import para carregar o JSON local
 
 void main() {
-  runApp(const MyApp());
+  runApp(const MeuApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class MeuApp extends StatelessWidget {
+  const MeuApp({Key? key}) : super(key: key);
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      debugShowCheckedModeBanner: false,
+      title: 'Busca de Passagens',
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: const PesquisaPage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+// Tela de Pesquisa
+class PesquisaPage extends StatefulWidget {
+  const PesquisaPage({Key? key}) : super(key: key);
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _PesquisaPageState createState() => _PesquisaPageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _PesquisaPageState extends State<PesquisaPage> {
+  final TextEditingController dataController = TextEditingController();
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  List<String> aeroportos = [];
+  String? aeroportoOrigem;
+  String? aeroportoDestino;
+
+  // Lista de companhias aéreas disponíveis
+  final List<String> companhiasAereas = [
+    "LATAM",
+    "GOL",
+    "AZUL",
+    "AMERICAN AIRLINES",
+    "TAP",
+  ];
+
+  List<String> companhiasSelecionadas = [];
+
+  int adultos = 1;
+  int criancas = 0;
+  int bebes = 0;
+
+  Future<void> carregarAeroportosLocalmente() async {
+    try {
+      final String jsonString = await rootBundle.loadString(
+        'assets/aeroportos.json',
+      );
+      List<dynamic> dados = json.decode(jsonString);
+
+      setState(() {
+        aeroportos = List<String>.from(
+          dados.map((e) => "${e["Iata"]} - ${e["Nome"]}"),
+        );
+      });
+
+      print(
+        "Aeroportos carregados: $aeroportos",
+      ); // Debug para garantir que os dados foram lidos corretamente
+    } catch (e) {
+      print("Erro ao carregar o JSON: $e");
+    }
+  }
+
+  void selecionarData(BuildContext context) async {
+    DateTime? dataSelecionada = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+
+    if (dataSelecionada != null) {
+      setState(() {
+        dataController.text =
+            "${dataSelecionada.day}/${dataSelecionada.month}/${dataSelecionada.year}";
+      });
+    }
+  }
+
+  void buscarVoos() {
+    if (aeroportoOrigem != null &&
+        aeroportoDestino != null &&
+        dataController.text.isNotEmpty &&
+        companhiasSelecionadas.isNotEmpty) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder:
+              (context) => ResultadosPage(
+                origem: aeroportoOrigem!,
+                destino: aeroportoDestino!,
+                data: dataController.text,
+                companhias: companhiasSelecionadas,
+                adultos: adultos,
+                criancas: criancas,
+                bebes: bebes,
+              ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Preencha todos os campos corretamente!")),
+      );
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    carregarAeroportosLocalmente();
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
+      appBar: AppBar(title: const Text("Buscar Passagens")),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text("Aeroporto de Origem"),
+            aeroportos.isEmpty
+                ? const CircularProgressIndicator()
+                : DropdownButton<String>(
+                  value: aeroportoOrigem,
+                  isExpanded: true,
+                  hint: const Text("Selecione um aeroporto"),
+                  items:
+                      aeroportos.map((String aeroporto) {
+                        return DropdownMenuItem<String>(
+                          value: aeroporto,
+                          child: Text(aeroporto),
+                        );
+                      }).toList(),
+                  onChanged: (String? novoValor) {
+                    setState(() {
+                      aeroportoOrigem = novoValor;
+                    });
+                  },
+                ),
+
+            const SizedBox(height: 16),
+
+            const Text("Aeroporto de Destino"),
+            aeroportos.isEmpty
+                ? const CircularProgressIndicator()
+                : DropdownButton<String>(
+                  value: aeroportoDestino,
+                  isExpanded: true,
+                  hint: const Text("Selecione um aeroporto"),
+                  items:
+                      aeroportos.map((String aeroporto) {
+                        return DropdownMenuItem<String>(
+                          value: aeroporto,
+                          child: Text(aeroporto),
+                        );
+                      }).toList(),
+                  onChanged: (String? novoValor) {
+                    setState(() {
+                      aeroportoDestino = novoValor;
+                    });
+                  },
+                ),
+
+            const SizedBox(height: 16),
+
+            TextField(
+              controller: dataController,
+              decoration: const InputDecoration(labelText: "Data da Viagem"),
+              onTap: () => selecionarData(context),
+              readOnly: true,
+            ),
+
+            const SizedBox(height: 16),
+
+            const Text("Companhias Aéreas"),
+            Column(
+              children:
+                  companhiasAereas.map((companhia) {
+                    return CheckboxListTile(
+                      title: Text(companhia),
+                      value: companhiasSelecionadas.contains(companhia),
+                      onChanged: (bool? selecionado) {
+                        setState(() {
+                          if (selecionado == true) {
+                            companhiasSelecionadas.add(companhia);
+                          } else {
+                            companhiasSelecionadas.remove(companhia);
+                          }
+                        });
+                      },
+                    );
+                  }).toList(),
+            ),
+
+            const SizedBox(height: 20),
+
+            ElevatedButton(onPressed: buscarVoos, child: const Text("Buscar")),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Tela de Resultados
+class ResultadosPage extends StatelessWidget {
+  final String origem;
+  final String destino;
+  final String data;
+  final List<String> companhias;
+  final int adultos;
+  final int criancas;
+  final int bebes;
+
+  const ResultadosPage({
+    Key? key,
+    required this.origem,
+    required this.destino,
+    required this.data,
+    required this.companhias,
+    required this.adultos,
+    required this.criancas,
+    required this.bebes,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text("Resultados")),
+      body: Center(
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+          children: [
+            Text("Voos de $origem para $destino"),
+            Text("Data: $data"),
+            Text("Adultos: $adultos | Crianças: $criancas | Bebês: $bebes"),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Voltar"),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
