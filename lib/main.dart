@@ -30,13 +30,13 @@ class PesquisaPage extends StatefulWidget {
 }
 
 class _PesquisaPageState extends State<PesquisaPage> {
-  final TextEditingController dataController = TextEditingController();
+  final TextEditingController dataIdaController = TextEditingController();
+  final TextEditingController dataVoltaController = TextEditingController();
 
   List<String> aeroportos = [];
   String? aeroportoOrigem;
   String? aeroportoDestino;
 
-  // Lista de companhias aéreas disponíveis
   final List<String> companhiasAereas = [
     "LATAM",
     "GOL",
@@ -44,7 +44,6 @@ class _PesquisaPageState extends State<PesquisaPage> {
     "AMERICAN AIRLINES",
     "TAP",
   ];
-
   List<String> companhiasSelecionadas = [];
 
   int adultos = 1;
@@ -64,15 +63,16 @@ class _PesquisaPageState extends State<PesquisaPage> {
         );
       });
 
-      print(
-        "Aeroportos carregados: $aeroportos",
-      ); // Debug para garantir que os dados foram lidos corretamente
+      print("Aeroportos carregados: $aeroportos");
     } catch (e) {
       print("Erro ao carregar o JSON: $e");
     }
   }
 
-  void selecionarData(BuildContext context) async {
+  void selecionarData(
+    BuildContext context,
+    TextEditingController controller,
+  ) async {
     DateTime? dataSelecionada = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -82,37 +82,104 @@ class _PesquisaPageState extends State<PesquisaPage> {
 
     if (dataSelecionada != null) {
       setState(() {
-        dataController.text =
+        controller.text =
             "${dataSelecionada.day}/${dataSelecionada.month}/${dataSelecionada.year}";
       });
     }
   }
 
   void buscarVoos() {
-    if (aeroportoOrigem != null &&
-        aeroportoDestino != null &&
-        dataController.text.isNotEmpty &&
-        companhiasSelecionadas.isNotEmpty) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder:
-              (context) => ResultadosPage(
-                origem: aeroportoOrigem!,
-                destino: aeroportoDestino!,
-                data: dataController.text,
-                companhias: companhiasSelecionadas,
-                adultos: adultos,
-                criancas: criancas,
-                bebes: bebes,
-              ),
+    if (aeroportoOrigem == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Selecione um aeroporto de origem!")),
+      );
+      return;
+    }
+    if (aeroportoDestino == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Selecione um aeroporto de destino!")),
+      );
+      return;
+    }
+    if (dataIdaController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Selecione uma data de ida!")),
+      );
+      return;
+    }
+    if (dataVoltaController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Selecione uma data de volta!")),
+      );
+      return;
+    }
+    if (companhiasSelecionadas.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Selecione pelo menos uma companhia aérea!"),
         ),
       );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Preencha todos os campos corretamente!")),
-      );
+      return;
     }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => ResultadosPage(
+              origem: aeroportoOrigem!,
+              destino: aeroportoDestino!,
+              dataIda: dataIdaController.text,
+              dataVolta: dataVoltaController.text,
+              companhias: companhiasSelecionadas,
+              adultos: adultos,
+              criancas: criancas,
+              bebes: bebes,
+            ),
+      ),
+    );
+  }
+
+  Widget buildPassageiroSelector(
+    String titulo,
+    int valor,
+    Function(int) atualizarValor, {
+    int min = 0,
+    int? max,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(titulo),
+        Row(
+          children: [
+            IconButton(
+              onPressed:
+                  valor > min
+                      ? () {
+                        setState(() {
+                          atualizarValor(valor - 1);
+                        });
+                      }
+                      : null,
+              icon: const Icon(Icons.remove),
+            ),
+            Text(valor.toString(), style: const TextStyle(fontSize: 16)),
+            IconButton(
+              onPressed:
+                  (max == null || valor < max)
+                      ? () {
+                        setState(() {
+                          atualizarValor(valor + 1);
+                        });
+                      }
+                      : null,
+              icon: const Icon(Icons.add),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 
   @override
@@ -131,78 +198,83 @@ class _PesquisaPageState extends State<PesquisaPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text("Aeroporto de Origem"),
-            aeroportos.isEmpty
-                ? const CircularProgressIndicator()
-                : DropdownButton<String>(
-                  value: aeroportoOrigem,
-                  isExpanded: true,
-                  hint: const Text("Selecione um aeroporto"),
-                  items:
-                      aeroportos.map((String aeroporto) {
-                        return DropdownMenuItem<String>(
-                          value: aeroporto,
-                          child: Text(aeroporto),
-                        );
-                      }).toList(),
-                  onChanged: (String? novoValor) {
-                    setState(() {
-                      aeroportoOrigem = novoValor;
-                    });
-                  },
-                ),
+            DropdownButton<String>(
+              value: aeroportoOrigem,
+              isExpanded: true,
+              hint: const Text("Selecione um aeroporto"),
+              items:
+                  aeroportos.map((String aeroporto) {
+                    return DropdownMenuItem<String>(
+                      value: aeroporto,
+                      child: Text(aeroporto),
+                    );
+                  }).toList(),
+              onChanged: (String? novoValor) {
+                setState(() {
+                  aeroportoOrigem = novoValor;
+                });
+              },
+            ),
 
             const SizedBox(height: 16),
 
             const Text("Aeroporto de Destino"),
-            aeroportos.isEmpty
-                ? const CircularProgressIndicator()
-                : DropdownButton<String>(
-                  value: aeroportoDestino,
-                  isExpanded: true,
-                  hint: const Text("Selecione um aeroporto"),
-                  items:
-                      aeroportos.map((String aeroporto) {
-                        return DropdownMenuItem<String>(
-                          value: aeroporto,
-                          child: Text(aeroporto),
-                        );
-                      }).toList(),
-                  onChanged: (String? novoValor) {
-                    setState(() {
-                      aeroportoDestino = novoValor;
-                    });
-                  },
-                ),
+            DropdownButton<String>(
+              value: aeroportoDestino,
+              isExpanded: true,
+              hint: const Text("Selecione um aeroporto"),
+              items:
+                  aeroportos.map((String aeroporto) {
+                    return DropdownMenuItem<String>(
+                      value: aeroporto,
+                      child: Text(aeroporto),
+                    );
+                  }).toList(),
+              onChanged: (String? novoValor) {
+                setState(() {
+                  aeroportoDestino = novoValor;
+                });
+              },
+            ),
 
             const SizedBox(height: 16),
 
             TextField(
-              controller: dataController,
-              decoration: const InputDecoration(labelText: "Data da Viagem"),
-              onTap: () => selecionarData(context),
+              controller: dataIdaController,
+              decoration: const InputDecoration(labelText: "Data de Ida"),
+              onTap: () => selecionarData(context, dataIdaController),
+              readOnly: true,
+            ),
+
+            TextField(
+              controller: dataVoltaController,
+              decoration: const InputDecoration(labelText: "Data de Volta"),
+              onTap: () => selecionarData(context, dataVoltaController),
               readOnly: true,
             ),
 
             const SizedBox(height: 16),
 
-            const Text("Companhias Aéreas"),
-            Column(
-              children:
-                  companhiasAereas.map((companhia) {
-                    return CheckboxListTile(
-                      title: Text(companhia),
-                      value: companhiasSelecionadas.contains(companhia),
-                      onChanged: (bool? selecionado) {
-                        setState(() {
-                          if (selecionado == true) {
-                            companhiasSelecionadas.add(companhia);
-                          } else {
-                            companhiasSelecionadas.remove(companhia);
-                          }
-                        });
-                      },
-                    );
-                  }).toList(),
+            buildPassageiroSelector(
+              "Adultos",
+              adultos,
+              (v) => adultos = v,
+              min: 1,
+              max: 9,
+            ),
+            buildPassageiroSelector(
+              "Crianças",
+              criancas,
+              (v) => criancas = v,
+              min: 0,
+              max: 9,
+            ),
+            buildPassageiroSelector(
+              "Bebês",
+              bebes,
+              (v) => bebes = v,
+              min: 0,
+              max: adultos,
             ),
 
             const SizedBox(height: 20),
@@ -219,7 +291,8 @@ class _PesquisaPageState extends State<PesquisaPage> {
 class ResultadosPage extends StatelessWidget {
   final String origem;
   final String destino;
-  final String data;
+  final String dataIda;
+  final String dataVolta;
   final List<String> companhias;
   final int adultos;
   final int criancas;
@@ -229,7 +302,8 @@ class ResultadosPage extends StatelessWidget {
     Key? key,
     required this.origem,
     required this.destino,
-    required this.data,
+    required this.dataIda,
+    required this.dataVolta,
     required this.companhias,
     required this.adultos,
     required this.criancas,
@@ -241,18 +315,8 @@ class ResultadosPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text("Resultados")),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text("Voos de $origem para $destino"),
-            Text("Data: $data"),
-            Text("Adultos: $adultos | Crianças: $criancas | Bebês: $bebes"),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Voltar"),
-            ),
-          ],
+        child: Text(
+          "Viagem de $origem para $destino em $dataIda - Volta: $dataVolta",
         ),
       ),
     );
