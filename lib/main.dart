@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart'
     show rootBundle; // Import para carregar o JSON local
+import 'dart:math'; // Import para gerar preços aleatórios
 
 void main() {
   runApp(const MeuApp());
@@ -43,6 +44,8 @@ class _PesquisaPageState extends State<PesquisaPage> {
     "AZUL",
     "AMERICAN AIRLINES",
     "TAP",
+    "AVIANCA",
+    "VOEPASS",
   ];
   List<String> companhiasSelecionadas = [];
 
@@ -122,6 +125,9 @@ class _PesquisaPageState extends State<PesquisaPage> {
       return;
     }
 
+    // Simular a busca de voos e obtenção de preços (substitua isso por sua lógica real)
+    List<double> precosVoos = gerarPrecosVoos(companhiasSelecionadas.length);
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -135,9 +141,22 @@ class _PesquisaPageState extends State<PesquisaPage> {
               adultos: adultos,
               criancas: criancas,
               bebes: bebes,
+              precos: precosVoos, // Passar os preços para a tela de resultados
             ),
       ),
     );
+  }
+
+  // Função auxiliar para gerar preços aleatórios (substitua isso por sua lógica real)
+  List<double> gerarPrecosVoos(int quantidade) {
+    Random random = Random();
+    List<double> precos = [];
+    for (int i = 0; i < quantidade; i++) {
+      // Ajuste os valores mínimo e máximo conforme necessário
+      double preco = 200.0 + random.nextDouble() * 1000.0;
+      precos.add(preco);
+    }
+    return precos;
   }
 
   Widget buildPassageiroSelector(
@@ -182,6 +201,34 @@ class _PesquisaPageState extends State<PesquisaPage> {
     );
   }
 
+  Widget buildCompanhiaAereaSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("Companhias Aéreas"),
+        Wrap(
+          // Use Wrap for better layout on smaller screens
+          children:
+              companhiasAereas.map((companhia) {
+                return FilterChip(
+                  label: Text(companhia),
+                  selected: companhiasSelecionadas.contains(companhia),
+                  onSelected: (bool selected) {
+                    setState(() {
+                      if (selected) {
+                        companhiasSelecionadas.add(companhia);
+                      } else {
+                        companhiasSelecionadas.remove(companhia);
+                      }
+                    });
+                  },
+                );
+              }).toList(),
+        ),
+      ],
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -192,7 +239,8 @@ class _PesquisaPageState extends State<PesquisaPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Buscar Passagens")),
-      body: Padding(
+      body: SingleChildScrollView(
+        // Add SingleChildScrollView
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -215,9 +263,7 @@ class _PesquisaPageState extends State<PesquisaPage> {
                 });
               },
             ),
-
             const SizedBox(height: 16),
-
             const Text("Aeroporto de Destino"),
             DropdownButton<String>(
               value: aeroportoDestino,
@@ -236,25 +282,20 @@ class _PesquisaPageState extends State<PesquisaPage> {
                 });
               },
             ),
-
             const SizedBox(height: 16),
-
             TextField(
               controller: dataIdaController,
               decoration: const InputDecoration(labelText: "Data de Ida"),
               onTap: () => selecionarData(context, dataIdaController),
               readOnly: true,
             ),
-
             TextField(
               controller: dataVoltaController,
               decoration: const InputDecoration(labelText: "Data de Volta"),
               onTap: () => selecionarData(context, dataVoltaController),
               readOnly: true,
             ),
-
             const SizedBox(height: 16),
-
             buildPassageiroSelector(
               "Adultos",
               adultos,
@@ -276,9 +317,9 @@ class _PesquisaPageState extends State<PesquisaPage> {
               min: 0,
               max: adultos,
             ),
-
             const SizedBox(height: 20),
-
+            buildCompanhiaAereaSelector(), // Add the airline selector
+            const SizedBox(height: 20),
             ElevatedButton(onPressed: buscarVoos, child: const Text("Buscar")),
           ],
         ),
@@ -297,6 +338,7 @@ class ResultadosPage extends StatelessWidget {
   final int adultos;
   final int criancas;
   final int bebes;
+  final List<double> precos; // Lista de preços recebida
 
   const ResultadosPage({
     Key? key,
@@ -308,16 +350,22 @@ class ResultadosPage extends StatelessWidget {
     required this.adultos,
     required this.criancas,
     required this.bebes,
+    required this.precos,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Resultados")),
-      body: Center(
-        child: Text(
-          "Viagem de $origem para $destino em $dataIda - Volta: $dataVolta",
-        ),
+      body: ListView.builder(
+        itemCount: companhias.length,
+        itemBuilder: (context, index) {
+          return ListTile(
+            title: Text("Companhia: ${companhias[index]}"),
+            subtitle: Text("Preço: R\$ ${precos[index].toStringAsFixed(2)}"),
+            // Você pode adicionar mais informações aqui, como horários de voo, etc.
+          );
+        },
       ),
     );
   }
