@@ -57,6 +57,7 @@ Material Design (Interface UI)
 📂 Estrutura do Projeto
 
 / buscarviagens
+
   ├── lib/
   
   │   ├── main.dart          # Arquivo principal
