@@ -58,7 +58,11 @@ Material Design (Interface UI)
 
 / buscarviagens
   ├── lib/
+  
   │   ├── main.dart          # Arquivo principal
+  
   ├── assets/
+  
   │   ├── aeroportos.json  # Dados locais
+  
   ├── pubspec.yaml  # Configuração de dependências
