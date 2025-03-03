@@ -62,22 +62,3 @@ Material Design (Interface UI)
   ├── assets/
   │   ├── aeroportos.json  # Dados locais
   ├── pubspec.yaml  # Configuração de dependências
-
-🛠 Contribuição
-
-Contribuições são bem-vindas! Para contribuir:
-
-Faça um fork do repositório
-
-Crie uma branch (git checkout -b minha-feature)
-
-Commit suas mudanças (git commit -m 'Adiciona nova feature')
-
-Faça um push para a branch (git push origin minha-feature)
-
-Abra um Pull Request 🚀
-
-📜 Licença
-
-Este projeto está sob a licença MIT.
-
