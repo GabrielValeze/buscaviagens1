@@ -328,7 +328,6 @@ class _PesquisaPageState extends State<PesquisaPage> {
   }
 }
 
-// Tela de Resultados
 class ResultadosPage extends StatelessWidget {
   final String origem;
   final String destino;
@@ -338,7 +337,7 @@ class ResultadosPage extends StatelessWidget {
   final int adultos;
   final int criancas;
   final int bebes;
-  final List<double> precos; // Lista de preços recebida
+  final List<double> precos;
 
   const ResultadosPage({
     Key? key,
@@ -353,6 +352,11 @@ class ResultadosPage extends StatelessWidget {
     required this.precos,
   }) : super(key: key);
 
+  double calcularTaxaEmbarque() {
+    const double taxaPorPessoa = 50.0; // Valor fictício da taxa de embarque
+    return (adultos + criancas) * taxaPorPessoa;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -360,10 +364,34 @@ class ResultadosPage extends StatelessWidget {
       body: ListView.builder(
         itemCount: companhias.length,
         itemBuilder: (context, index) {
-          return ListTile(
-            title: Text("Companhia: ${companhias[index]}"),
-            subtitle: Text("Preço: R\$ ${precos[index].toStringAsFixed(2)}"),
-            // Você pode adicionar mais informações aqui, como horários de voo, etc.
+          return Card(
+            margin: const EdgeInsets.all(10),
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "✈ Companhia: ${companhias[index]}",
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Text("💰 Preço: R\$ ${precos[index].toStringAsFixed(2)}"),
+                  Text(
+                    "🏷️ Taxa de embarque total: R\$ ${calcularTaxaEmbarque().toStringAsFixed(2)}",
+                  ),
+                  Text("📍 Origem: $origem"),
+                  Text("📍 Destino: $destino"),
+                  Text("🕒 Embarque: $dataIda"),
+                  Text("🕒 Desembarque: $dataVolta"),
+                  Text(
+                    "⏳ Duração do voo: ${(1 + index) * 2}h",
+                  ), // Simulando duração
+                  Text(
+                    "🔄 Número de conexões: ${index % 3}",
+                  ), // Simulando conexões
+                ],
+              ),
+            ),
           );
         },
       ),
