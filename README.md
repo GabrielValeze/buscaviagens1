@@ -20,10 +20,6 @@ Instale as dependências do projeto executando:
 
 flutter pub get
 
-⚙ Configuração da API
-
-Este projeto consome a API https://buscamilhas.mock.gralmeidan.dev. Certifique-se de que ela está acessível antes de executar o aplicativo.
-
 ▶ Rodando o App
 
 Para rodar o aplicativo no emulador ou dispositivo físico, use o comando:
